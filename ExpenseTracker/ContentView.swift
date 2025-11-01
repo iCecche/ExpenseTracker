@@ -8,59 +8,58 @@
 import SwiftUI
 import SwiftData
 
-struct ContentView: View {
+
+// MARK: - Main View
+struct ExpenseTrackerHomeView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
-
+    @State private var selectedTab = 0
+    
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
-                    }
+        TabView(selection: $selectedTab) {
+            HomeContentView()
+                .tabItem {
+                    Label("Panoramica", systemImage: "chart.pie.fill")
                 }
-                .onDelete(perform: deleteItems)
-            }
-#if os(macOS)
-            .navigationSplitViewColumnWidth(min: 180, ideal: 200)
-#endif
-            .toolbar {
-#if os(iOS)
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
+                .tag(0)
+            
+            StatsView()
+                .tabItem {
+                    Label("Statistiche", systemImage: "chart.bar.fill")
                 }
-#endif
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                }
-            }
-        } detail: {
-            Text("Select an item")
-        }
-    }
+                .tag(1)
 
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
+            SubscriptionsView()
+                .tabItem {
+                    Label("Abbonamenti", systemImage: "arrow.clockwise")
+                }
+                .tag(2)
+            
+            SettingsView()
+                .tabItem {
+                    Label("Impostazioni", systemImage: "gear")
+                }
+                .tag(3)
         }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
-            }
-        }
+        .tint(.blue)
     }
 }
 
+// MARK: - Data Models for Charts
+struct MonthData: Identifiable {
+    let id = UUID()
+    let month: String
+    let amount: Int
+}
+
+struct PieData: Identifiable {
+    let id = UUID()
+    let name: String
+    let amount: Int
+    let color: Color
+}
+
+// MARK: - Preview
 #Preview {
-    ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
+    ExpenseTrackerHomeView()
+        .modelContainer(for: [Transaction.self, Category.self, Subscription.self, Budget.self], inMemory: true)
 }
